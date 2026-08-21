@@ -34,7 +34,7 @@ import photos
 from utilisateurs import NOMS_ROLES
 from decorateurs import connexion_requise, role_requis, utilisateur_courant
 
-app = Flask(__name__, templates_folder='.'
+app = Flask(__name__)
 
 # SÉCURITÉ : en production, la clé secrète DOIT être définie via la variable
 # d'environnement EDUVIA_SECRET_KEY (une longue chaîne aléatoire, différente
