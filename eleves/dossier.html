@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block titre %}Dossier de {{ eleve.nom }}{% endblock %}
+
+{% block contenu %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            {% if eleve.chemin_photo %}
+                <img src="/{{ eleve.chemin_photo }}" class="rounded" style="width:80px;height:80px;object-fit:cover;" alt="Photo">
+            {% else %}
+                <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width:80px;height:80px;font-size:2rem;">👤</div>
+            {% endif %}
+            <h2 class="mb-0">{{ eleve.nom }} {{ eleve.postnom }} {{ eleve.prenom }}</h2>
+        </div>
+        <span class="badge fs-6
+            {% if eleve.statut == 'ACTIF' %}bg-success
+            {% elif eleve.statut in ('EXCLU', 'INACTIF') %}bg-danger
+            {% else %}bg-secondary{% endif %}">
+            {{ noms_statuts[eleve.statut] }}
+        </span>
+    </div>
+
+    <div class="row g-3">
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">Identité</div>
+                <div class="card-body">
+                    <p><strong>Matricule :</strong> {{ eleve.matricule }}</p>
+                    <p><strong>Sexe :</strong> {{ "Masculin" if eleve.sexe == "M" else "Féminin" }}</p>
+                    <p><strong>Date de naissance :</strong> {{ eleve.date_naissance or "—" }}</p>
+                    <p class="mb-0"><strong>Lieu de naissance :</strong> {{ eleve.lieu_naissance or "—" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">Scolarité</div>
+                <div class="card-body">
+                    <p><strong>Classe :</strong>
+                        {% if eleve.classe_nom %}{{ eleve.classe_niveau }} - {{ eleve.classe_nom }}{% else %}<span class="text-muted">Non assignée</span>{% endif %}
+                    </p>
+                    <p><strong>Option :</strong> {{ eleve.option_nom or "—" }}</p>
+                    <p class="mb-0"><strong>Année scolaire :</strong> {{ eleve.annee_scolaire or "—" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">Parent / Tuteur</div>
+                <div class="card-body">
+                    <p><strong>Nom :</strong> {{ eleve.nom_parent or "—" }}</p>
+                    <p><strong>Contact :</strong> {{ eleve.contact_parent or "—" }}</p>
+                    <p class="mb-0"><strong>Adresse :</strong> {{ eleve.adresse or "—" }}</p>
+                </div>
+            </div>
+        </div>
+
+        {% if current_user.role == 'prefet' %}
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">Changer le statut</div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('changer_statut_eleve', id_eleve=eleve.id) }}">
+                        <div class="mb-2">
+                            <select name="statut" class="form-select">
+                                {% for valeur, libelle in noms_statuts.items() %}
+                                    <option value="{{ valeur }}" {% if valeur == eleve.statut %}selected{% endif %}>{{ libelle }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" name="note" class="form-control" placeholder="Motif / note (optionnel)">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Mettre à jour le statut</button>
+                    </form>
+                    <p class="text-muted small mt-2 mb-0">
+                        Si le statut n'est pas "Actif", le compte de connexion de l'élève
+                        (s'il en a un) sera automatiquement désactivé. Son historique reste conservé.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">Résultats</div>
+                <div class="card-body text-muted">Module à venir.</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">Présences</div>
+                <div class="card-body">
+                    <p class="mb-1">Absences : <strong>{{ total_absences }}</strong></p>
+                    <p class="mb-0">Retards : <strong>{{ total_retards }}</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-bold">Paiements</div>
+                <div class="card-body">
+                    {% for devise in ['CDF', 'USD'] %}
+                        <p class="mb-1 small text-muted">{{ devise }}</p>
+                        <p class="mb-2">Attendu : {{ "%.2f"|format(soldes[devise].attendu) }} —
+                           Payé : {{ "%.2f"|format(soldes[devise].paye) }} —
+                           Solde : <strong class="{% if soldes[devise].solde > 0 %}text-danger{% else %}text-success{% endif %}">{{ "%.2f"|format(soldes[devise].solde) }}</strong>
+                        </p>
+                    {% endfor %}
+                    {% if current_user.role in ('prefet', 'secretariat') %}
+                    <a href="{{ url_for('paiements_eleve', id_eleve=eleve.id) }}" class="btn btn-sm btn-outline-primary">Gérer les paiements</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header fw-bold">Historique scolaire</div>
+                <div class="card-body">
+                    {% if historique|length == 0 %}
+                        <p class="text-muted mb-0">Aucun événement enregistré.</p>
+                    {% else %}
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr><th>Date</th><th>Événement</th><th>Détails</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for evenement in historique %}
+                                <tr>
+                                    <td class="text-nowrap">{{ evenement.date_heure }}</td>
+                                    <td>{{ evenement.evenement }}</td>
+                                    <td class="text-muted">{{ evenement.details }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <a href="{{ url_for('liste_eleves') }}" class="btn btn-secondary mt-3">Retour à la liste</a>
+{% endblock %}
