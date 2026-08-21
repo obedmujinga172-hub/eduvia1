@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block titre %}Mon profil{% endblock %}
+
+{% block contenu %}
+    <h2 class="mb-4">Mon profil</h2>
+
+    {% if mot_de_passe_par_defaut %}
+        <div class="alert alert-warning">
+            ⚠️ Vous utilisez encore le mot de passe par défaut (<code>admin123</code>).
+            <a href="{{ url_for('changer_mot_de_passe') }}" class="alert-link">Changez-le maintenant</a>,
+            surtout si l'application est accessible en ligne.
+        </div>
+    {% endif %}
+
+    <div class="card shadow-sm" style="max-width: 500px;">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                {% set photo = eleve.chemin_photo if eleve else current_user.chemin_photo %}
+                {% if photo %}
+                    <img src="/{{ photo }}" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;" alt="Photo">
+                {% else %}
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width:64px;height:64px;font-size:1.5rem;">👤</div>
+                {% endif %}
+                <form method="post" action="{{ url_for('changer_photo') }}" enctype="multipart/form-data" class="d-flex gap-2 align-items-center">
+                    <input type="file" name="photo" class="form-control form-control-sm" accept=".png,.jpg,.jpeg" required>
+                    <button type="submit" class="btn btn-sm btn-outline-primary text-nowrap">Changer</button>
+                </form>
+            </div>
+            <p><strong>Nom complet :</strong> {{ current_user.nom_complet }}</p>
+            <p><strong>Email :</strong> {{ current_user.email }}</p>
+            <p class="mb-2"><strong>Rôle :</strong> <span class="badge bg-secondary">{{ current_user.nom_role }}</span></p>
+            <a href="{{ url_for('changer_mot_de_passe') }}" class="btn btn-sm btn-outline-secondary">Changer mon mot de passe</a>
+        </div>
+    </div>
+
+    {% if current_user.role == 'eleve' %}
+        <h4 class="mt-4">Mes informations scolaires</h4>
+        {% if eleve %}
+            <div class="card shadow-sm" style="max-width: 500px;">
+                <div class="card-body">
+                    <p><strong>Matricule :</strong> {{ eleve.matricule }}</p>
+                    <p><strong>Classe :</strong> {{ eleve.classe }}</p>
+                    <p class="mb-0"><strong>Option/Section :</strong> {{ eleve.section or "—" }}</p>
+                </div>
+            </div>
+        {% else %}
+            <p class="text-muted">Votre compte n'est relié à aucune fiche élève pour le moment. Contactez le préfet.</p>
+        {% endif %}
+
+        {% if eleve %}
+            <h5 class="mt-4">Mes notes</h5>
+            {% for periode in periodes %}
+                {% set donnees = notes_par_periode[periode] %}
+                <div class="card shadow-sm mb-2" style="max-width: 500px;">
+                    <div class="card-body">
+                        <p class="fw-bold mb-2">{{ periode }}</p>
+                        {% if donnees.notes|length == 0 %}
+                            <p class="text-muted small mb-0">Aucune note enregistrée.</p>
+                        {% else %}
+                            {% for note in donnees.notes %}
+                                <span class="badge bg-secondary">{{ note.nom_matiere }} : {{ "%.2f"|format(note.valeur) }}</span>
+                            {% endfor %}
+                            <p class="mt-2 mb-2"><strong>Moyenne : {{ "%.2f"|format(donnees.moyenne) }} / 20</strong></p>
+                            <a href="{{ url_for('telecharger_bulletin', id_eleve=eleve.id, periode=periode) }}"
+                               class="btn btn-sm btn-outline-primary">Télécharger le bulletin (PDF)</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+        {% if solde_eleve %}
+            <h5 class="mt-4">Mes frais scolaires</h5>
+            <div class="card shadow-sm mb-2" style="max-width: 500px;">
+                <div class="card-body">
+                    {% for devise in ['CDF', 'USD'] %}
+                        <p class="mb-1 small text-muted">{{ devise }}</p>
+                        <p class="mb-2">Attendu : {{ "%.2f"|format(solde_eleve[devise].attendu) }} —
+                           Payé : {{ "%.2f"|format(solde_eleve[devise].paye) }} —
+                           Solde : <strong class="{% if solde_eleve[devise].solde > 0 %}text-danger{% else %}text-success{% endif %}">{{ "%.2f"|format(solde_eleve[devise].solde) }}</strong>
+                        </p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        <p class="text-muted mt-3">Matières et emploi du temps sont disponibles dans le menu "Emploi du temps".</p>
+    {% endif %}
+
+    {% if current_user.role == 'parent' %}
+        <h4 class="mt-4">Mes enfants</h4>
+        {% if enfants|length == 0 %}
+            <p class="text-muted">Aucun enfant relié à votre compte pour le moment. Contactez le préfet.</p>
+        {% else %}
+            {% for enfant in enfants %}
+            <div class="card shadow-sm mb-2" style="max-width: 500px;">
+                <div class="card-body">
+                    <p class="mb-1"><strong>{{ enfant.nom }} {{ enfant.postnom }} {{ enfant.prenom }}</strong></p>
+                    <p class="mb-1">Matricule : {{ enfant.matricule }}</p>
+                    <p class="mb-2">Classe :
+                        {% if enfant.classe_nom %}{{ enfant.classe_niveau }} - {{ enfant.classe_nom }}{% if enfant.option_nom %} ({{ enfant.option_nom }}){% endif %}
+                        {% else %}<span class="text-muted">Non assignée</span>{% endif %}
+                    </p>
+                    <a href="{{ url_for('telecharger_bulletin', id_eleve=enfant.id, periode=periodes[0]) }}"
+                       class="btn btn-sm btn-outline-primary">Bulletin {{ periodes[0] }} (PDF)</a>
+                    {% if soldes_enfants and soldes_enfants[enfant.id] %}
+                        {% set s = soldes_enfants[enfant.id] %}
+                        <p class="mt-2 mb-0 small">Frais scolaires :</p>
+                        {% for devise in ['CDF', 'USD'] %}
+                            <p class="mb-0 small">
+                                {{ devise }} — Solde :
+                                <strong class="{% if s[devise].solde > 0 %}text-danger{% else %}text-success{% endif %}">{{ "%.2f"|format(s[devise].solde) }}</strong>
+                                <span class="text-muted">(attendu {{ "%.2f"|format(s[devise].attendu) }} / payé {{ "%.2f"|format(s[devise].paye) }})</span>
+                            </p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+        <p class="text-muted mt-3">Emploi du temps disponible dans le menu correspondant.</p>
+    {% endif %}
+{% endblock %}

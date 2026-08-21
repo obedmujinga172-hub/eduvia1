@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titre %}Frais scolaires{% endblock %}
+
+{% block contenu %}
+    <h2 class="mb-4">Frais scolaires</h2>
+
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-4">
+            <select name="id_classe" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Choisir une classe --</option>
+                {% for classe in classes %}
+                    <option value="{{ classe.id }}" {% if classe.id == id_classe %}selected{% endif %}>{{ classe.niveau }} - {{ classe.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+
+    {% if id_classe %}
+        <form method="post" class="row g-2 mb-4">
+            <input type="hidden" name="id_classe" value="{{ id_classe }}">
+            <div class="col-md-4">
+                <input type="text" name="nom" class="form-control" placeholder="Ex: Minerval" required>
+            </div>
+            <div class="col-md-3">
+                <input type="number" name="montant" class="form-control" placeholder="Montant" step="0.01" min="0" required>
+            </div>
+            <div class="col-md-3">
+                <select name="devise" class="form-select">
+                    {% for devise in devises %}
+                        <option value="{{ devise }}">{{ devise }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100">+ Ajouter</button>
+            </div>
+        </form>
+
+        {% if frais_classe|length == 0 %}
+            <p class="text-muted">Aucun frais configuré pour cette classe.</p>
+        {% else %}
+            <table class="table table-striped align-middle" style="max-width: 600px;">
+                <thead class="table-dark">
+                    <tr><th>Libellé</th><th>Montant</th><th>Devise</th><th class="text-end">Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for frais in frais_classe %}
+                    <tr>
+                        <td>{{ frais.nom }}</td>
+                        <td>{{ "%.2f"|format(frais.montant) }}</td>
+                        <td><span class="badge bg-secondary">{{ frais.devise }}</span></td>
+                        <td class="text-end">
+                            <form method="post" action="{{ url_for('supprimer_frais', id_frais=frais.id) }}" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-secondary fw-bold">
+                        <td colspan="4">
+                            Total attendu par élève :
+                            {% for devise in devises %}
+                                {% if totaux_attendus[devise] > 0 %}
+                                    {{ "%.2f"|format(totaux_attendus[devise]) }} {{ devise }}{% if not loop.last %} + {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        {% endif %}
+    {% endif %}
+{% endblock %}
