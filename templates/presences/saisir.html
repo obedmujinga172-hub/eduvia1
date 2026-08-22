@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block titre %}Saisir les présences{% endblock %}
+
+{% block contenu %}
+    <h2 class="mb-4">Saisir les présences</h2>
+
+    {% if attributions|length == 0 %}
+        <p class="text-muted">Aucune classe/matière ne vous a été attribuée pour le moment.</p>
+    {% else %}
+        <form method="get" class="row g-2 mb-4">
+            <div class="col-md-4">
+                <select name="id_classe_matiere" class="form-select" onchange="
+                    const [c, m] = this.value.split('-');
+                    document.getElementById('champ_classe').value = c;
+                    document.getElementById('champ_matiere').value = m;
+                ">
+                    <option value="">-- Classe / Matière --</option>
+                    {% for attribution in attributions %}
+                        <option value="{{ attribution.id_classe }}-{{ attribution.id_matiere }}"
+                            {% if attribution.id_classe == id_classe and attribution.id_matiere == id_matiere %}selected{% endif %}>
+                            {{ attribution.classe_niveau }} - {{ attribution.classe_nom }} · {{ attribution.nom_matiere }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="id_classe" id="champ_classe" value="{{ id_classe or '' }}">
+                <input type="hidden" name="id_matiere" id="champ_matiere" value="{{ id_matiere or '' }}">
+            </div>
+            <div class="col-md-3">
+                <input type="date" name="date_jour" class="form-control" value="{{ date_jour }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Afficher</button>
+            </div>
+        </form>
+
+        {% if eleves_presences is not none %}
+            {% if eleves_presences|length == 0 %}
+                <p class="text-muted">Aucun élève actif dans cette classe.</p>
+            {% else %}
+                <form method="post">
+                    <input type="hidden" name="id_classe" value="{{ id_classe }}">
+                    <input type="hidden" name="id_matiere" value="{{ id_matiere }}">
+                    <input type="hidden" name="date_jour" value="{{ date_jour }}">
+
+                    <table class="table table-striped align-middle" style="max-width: 700px;">
+                        <thead class="table-dark">
+                            <tr><th>Élève</th><th>Statut</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for ligne in eleves_presences %}
+                            <tr>
+                                <td>{{ ligne.nom }} {{ ligne.postnom }} {{ ligne.prenom }}</td>
+                                <td>
+                                    {% for valeur, libelle in noms_statuts.items() %}
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio"
+                                                   name="statut_{{ ligne.id_eleve }}" value="{{ valeur }}"
+                                                   {% if ligne.statut == valeur or (not ligne.statut and valeur == 'PRESENT') %}checked{% endif %}>
+                                            <label class="form-check-label">{{ libelle }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <button type="submit" class="btn btn-success">Enregistrer les présences</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

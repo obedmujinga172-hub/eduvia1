@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titre %}Ajouter un élève{% endblock %}
+
+{% block contenu %}
+    <h2 class="mb-4">Ajouter un élève</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% include "eleves/_formulaire.html" %}
+
+        <button type="submit" class="btn btn-success mt-3">Enregistrer</button>
+        <a href="{{ url_for('liste_eleves') }}" class="btn btn-secondary mt-3">Annuler</a>
+    </form>
+{% endblock %}

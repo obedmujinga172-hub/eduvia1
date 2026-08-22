@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block titre %}Paramètres de l'école{% endblock %}
+
+{% block contenu %}
+    <h2 class="mb-4">Paramètres de l'école</h2>
+    <p class="text-muted">
+        Ces informations personnalisent les documents générés par EDUVIA
+        (bulletins, reçus de paiement).
+    </p>
+
+    <form method="post" enctype="multipart/form-data" style="max-width: 600px;">
+        <div class="mb-3">
+            <label class="form-label">Nom de l'école *</label>
+            <input type="text" name="nom_ecole" class="form-control" required value="{{ parametres.nom_ecole }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Adresse</label>
+            <input type="text" name="adresse" class="form-control" value="{{ parametres.adresse or '' }}">
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Téléphone</label>
+                <input type="text" name="telephone" class="form-control" value="{{ parametres.telephone or '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" value="{{ parametres.email or '' }}">
+            </div>
+        </div>
+
+        <hr>
+        <h5>Signature</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nom du signataire</label>
+                <input type="text" name="nom_signataire" class="form-control" value="{{ parametres.nom_signataire or '' }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Titre / fonction</label>
+                <input type="text" name="titre_signataire" class="form-control" value="{{ parametres.titre_signataire or '' }}">
+            </div>
+        </div>
+
+        <hr>
+        <h5>Logo et cachet</h5>
+        <div class="mb-3">
+            <label class="form-label">Logo de l'école</label>
+            <input type="file" name="logo" class="form-control" accept=".png,.jpg,.jpeg">
+            {% if parametres.chemin_logo %}
+                <div class="form-text text-success">Un logo est déjà configuré.</div>
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Cachet de l'école</label>
+            <input type="file" name="cachet" class="form-control" accept=".png,.jpg,.jpeg">
+            {% if parametres.chemin_cachet %}
+                <div class="form-text text-success">Un cachet est déjà configuré.</div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+    </form>
+{% endblock %}

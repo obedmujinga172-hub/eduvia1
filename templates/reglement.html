@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}Règlement d'ordre intérieur{% endblock %}
+
+{% block contenu %}
+    <h2 class="mb-4">📋 Règlement d'ordre intérieur</h2>
+
+    {% if fichier_existe %}
+        <p class="text-muted">
+            Fichier actuel : <strong>{{ infos.nom_fichier_original }}</strong>
+            (importé le {{ infos.date_import }})
+        </p>
+        <a href="{{ url_for('telecharger_reglement') }}" class="btn btn-primary mb-4">
+            📥 Télécharger le règlement (PDF)
+        </a>
+    {% else %}
+        <p class="text-muted mb-4">Aucun règlement n'a encore été importé par l'école.</p>
+    {% endif %}
+
+    {% if current_user.role == 'prefet' %}
+        <hr>
+        <h5>{{ "Remplacer" if fichier_existe else "Importer" }} le règlement</h5>
+        <form method="post" action="{{ url_for('importer_reglement') }}" enctype="multipart/form-data" class="row g-2" style="max-width: 500px;">
+            <div class="col-8">
+                <input type="file" name="fichier" class="form-control" accept=".pdf" required>
+            </div>
+            <div class="col-4">
+                <button type="submit" class="btn btn-success w-100">
+                    {{ "Remplacer" if fichier_existe else "Importer" }}
+                </button>
+            </div>
+        </form>
+        {% if fichier_existe %}
+            <p class="text-muted small mt-2">Importer un nouveau fichier remplacera définitivement l'actuel.</p>
+        {% endif %}
+    {% endif %}
+{% endblock %}

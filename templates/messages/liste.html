@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titre %}Messages{% endblock %}
+
+{% block contenu %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📢 Messages</h2>
+        {% if current_user.role == 'prefet' %}
+            <a href="{{ url_for('creer_message') }}" class="btn btn-success">+ Nouveau message</a>
+        {% endif %}
+    </div>
+
+    {% if current_user.role == 'enseignant' %}
+        <p class="text-muted">Communications générales du Préfet. Lecture seule.</p>
+    {% endif %}
+
+    {% if messages|length == 0 %}
+        <p class="text-muted">Aucun message publié pour le moment.</p>
+    {% else %}
+        {% for message in messages %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <h5 class="card-title mb-1">{{ message.titre }}</h5>
+                    {% if current_user.role == 'prefet' %}
+                    <div class="text-nowrap">
+                        <a href="{{ url_for('modifier_message', id_message=message.id) }}" class="btn btn-sm btn-outline-primary">Modifier</a>
+                        <form method="post" action="{{ url_for('supprimer_message', id_message=message.id) }}" style="display:inline"
+                              onsubmit="return confirm('Supprimer ce message ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="text-muted small mb-2">
+                    Par {{ message.nom_auteur }} — {{ message.date_creation }}
+                    {% if message.date_modification %}(modifié le {{ message.date_modification }}){% endif %}
+                </p>
+                <p class="card-text" style="white-space: pre-wrap;">{{ message.contenu }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endblock %}

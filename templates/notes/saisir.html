@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block titre %}Saisir les notes{% endblock %}
+
+{% block contenu %}
+    <h2 class="mb-4">Saisir les notes</h2>
+
+    {% if attributions|length == 0 %}
+        <p class="text-muted">Aucune classe/matière ne vous a été attribuée pour le moment.</p>
+    {% else %}
+        <form method="get" class="row g-2 mb-4">
+            <div class="col-md-4">
+                <select name="id_classe_matiere" class="form-select" onchange="
+                    const [c, m] = this.value.split('-');
+                    document.getElementById('champ_classe').value = c;
+                    document.getElementById('champ_matiere').value = m;
+                ">
+                    <option value="">-- Classe / Matière --</option>
+                    {% for attribution in attributions %}
+                        <option value="{{ attribution.id_classe }}-{{ attribution.id_matiere }}"
+                            {% if attribution.id_classe == id_classe and attribution.id_matiere == id_matiere %}selected{% endif %}>
+                            {{ attribution.classe_niveau }} - {{ attribution.classe_nom }} · {{ attribution.nom_matiere }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="hidden" name="id_classe" id="champ_classe" value="{{ id_classe or '' }}">
+                <input type="hidden" name="id_matiere" id="champ_matiere" value="{{ id_matiere or '' }}">
+            </div>
+            <div class="col-md-3">
+                <select name="periode" class="form-select">
+                    {% for p in periodes %}
+                        <option value="{{ p }}" {% if p == periode %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Afficher</button>
+            </div>
+        </form>
+
+        {% if eleves_notes is not none %}
+            {% if eleves_notes|length == 0 %}
+                <p class="text-muted">Aucun élève actif dans cette classe.</p>
+            {% else %}
+                <form method="post">
+                    <input type="hidden" name="id_classe" value="{{ id_classe }}">
+                    <input type="hidden" name="id_matiere" value="{{ id_matiere }}">
+                    <input type="hidden" name="periode" value="{{ periode }}">
+
+                    <table class="table table-striped align-middle" style="max-width: 600px;">
+                        <thead class="table-dark">
+                            <tr><th>Élève</th><th>Note / 20</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for ligne in eleves_notes %}
+                            <tr>
+                                <td>{{ ligne.nom }} {{ ligne.postnom }} {{ ligne.prenom }}</td>
+                                <td>
+                                    <input type="number" name="note_{{ ligne.id_eleve }}" class="form-control"
+                                           min="0" max="20" step="0.5"
+                                           value="{{ ligne.valeur if ligne.valeur is not none else '' }}">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <button type="submit" class="btn btn-success">Enregistrer les notes</button>
+                </form>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endblock %}
